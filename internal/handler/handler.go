@@ -44,8 +44,7 @@ func FromConfig(c *Config) (*Todos, error) {
 	return t, nil
 }
 
-func health(w http.ResponseWriter, r *http.Request) {
-}
+func health(_ http.ResponseWriter, _ *http.Request) {}
 
 func (t *Todos) DeleteTodo(w http.ResponseWriter, r *http.Request) {
 	rawID := r.PathValue("id")
