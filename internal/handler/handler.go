@@ -36,11 +36,15 @@ func FromConfig(c *Config) (*Todos, error) {
 
 	t := &Todos{Slog: c.Slog, Mux: http.NewServeMux(), repo: repo}
 
+	t.Mux.HandleFunc("GET /health", health)
 	t.Mux.HandleFunc("GET /todos", withBaseMiddleware(c.Slog, c.RequestIDGenerator, t.getTodos))
 	t.Mux.HandleFunc("GET /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, t.getTodo))
 	t.Mux.HandleFunc("PUT /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, t.InsertTodo))
 	t.Mux.HandleFunc("DELETE /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, t.DeleteTodo))
 	return t, nil
+}
+
+func health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Todos) DeleteTodo(w http.ResponseWriter, r *http.Request) {
