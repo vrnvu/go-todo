@@ -34,7 +34,6 @@ linters:
     - "dogsled"
     - "errcheck"
     - "errorlint"
-    - "exportloopref"
     - "gofmt"
     - "gofumpt"
     - "goheader"

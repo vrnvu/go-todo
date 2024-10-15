@@ -59,7 +59,10 @@ func TestGetTodo(t *testing.T) {
 	}
 
 	want := exampleTodo()
-	repository.InsertTodo(want)
+	err = repository.InsertTodo(want)
+	if err != nil {
+		t.Fatalf("failed to insert todo: %v", err)
+	}
 
 	got, err := repository.GetTodo(1)
 	if err != nil {
@@ -98,7 +101,10 @@ func TestDeleteTodo(t *testing.T) {
 	}
 
 	want := exampleTodo()
-	repository.InsertTodo(want)
+	err = repository.InsertTodo(want)
+	if err != nil {
+		t.Fatalf("failed to insert todo: %v", err)
+	}
 
 	err = repository.DeleteTodo(1)
 	if err != nil {
@@ -134,7 +140,10 @@ func TestGetTodos(t *testing.T) {
 	}{
 		{name: "EmptyTodos", wantLen: 0},
 		{name: "OneTodo", wantLen: 1, beforeTest: func() {
-			repository.InsertTodo(exampleTodo())
+			err = repository.InsertTodo(exampleTodo())
+			if err != nil {
+				t.Fatalf("failed to insert todo: %v", err)
+			}
 		}},
 	}
 

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strconv"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/vrnvu/go-todo/internal/db"
 )
 

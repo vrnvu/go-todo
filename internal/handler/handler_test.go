@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -43,7 +44,7 @@ func TestTodosHandlerFailure(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 	handler := testHandler(t, tempFile)
 
-	r, err := http.NewRequest("DELETE", "/todos/1", nil)
+	r, err := http.NewRequestWithContext(context.Background(), "DELETE", "/todos/1", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -55,7 +56,7 @@ func TestTodosHandlerFailure(t *testing.T) {
 		t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
-	r, err = http.NewRequest("GET", "/todos/1", nil)
+	r, err = http.NewRequestWithContext(context.Background(), "GET", "/todos/1", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -67,7 +68,7 @@ func TestTodosHandlerFailure(t *testing.T) {
 		t.Fatalf("expected status code %d, got %d", http.StatusNotFound, w.Code)
 	}
 
-	r, err = http.NewRequest("GET", "/todos", nil)
+	r, err = http.NewRequestWithContext(context.Background(), "GET", "/todos", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -88,7 +89,6 @@ func TestTodosHandlerFailure(t *testing.T) {
 	if len(body) != 0 {
 		t.Fatalf("expected body to be %v, got %v", []db.Todo{}, body)
 	}
-
 }
 
 func TestContentType(t *testing.T) {
@@ -97,7 +97,7 @@ func TestContentType(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 	handler := testHandler(t, tempFile)
 
-	r, err := http.NewRequest("PUT", "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
+	r, err := http.NewRequestWithContext(context.Background(), "PUT", "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
