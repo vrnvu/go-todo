@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/jaevor/go-nanoid"
 	"github.com/vrnvu/go-todo/internal/handler"
@@ -68,8 +69,14 @@ func main() {
 		panic(err)
 	}
 
+	server := &http.Server{
+		Addr:              ":" + port,
+		Handler:           todosHandler.Mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
 	slog.Info("starting server", "port", port)
-	if err := http.ListenAndServe(":"+port, todosHandler.Mux); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		panic(err)
 	}
 }

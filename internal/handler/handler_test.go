@@ -109,7 +109,7 @@ func TestContentType(t *testing.T) {
 		t.Fatalf("expected status code %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	r, err = http.NewRequest("PUT", "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
+	r, err = http.NewRequestWithContext(context.Background(), "PUT", "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}

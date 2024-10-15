@@ -132,38 +132,24 @@ func TestGetTodos(t *testing.T) {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
-	tests := []struct {
-		name       string
-		wantLen    int
-		beforeTest func()
-		afterTest  func()
-	}{
-		{name: "EmptyTodos", wantLen: 0},
-		{name: "OneTodo", wantLen: 1, beforeTest: func() {
-			err = repository.InsertTodo(exampleTodo())
-			if err != nil {
-				t.Fatalf("failed to insert todo: %v", err)
-			}
-		}},
+	todos, err := repository.GetTodos()
+	if err != nil {
+		t.Fatalf("failed to get todos: %v", err)
+	}
+	if len(todos) != 0 {
+		t.Fatalf("expected 0 todos, got %d", len(todos))
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.beforeTest != nil {
-				tt.beforeTest()
-			}
-			if tt.afterTest != nil {
-				defer tt.afterTest()
-			}
+	err = repository.InsertTodo(exampleTodo())
+	if err != nil {
+		t.Fatalf("failed to insert todo: %v", err)
+	}
 
-			todos, err := repository.GetTodos()
-			if err != nil {
-				t.Fatalf("failed to get todos: %v", err)
-			}
-
-			if len(todos) != tt.wantLen {
-				t.Fatalf("expected %d todos, got %d", tt.wantLen, len(todos))
-			}
-		})
+	todos, err = repository.GetTodos()
+	if err != nil {
+		t.Fatalf("failed to get todos: %v", err)
+	}
+	if len(todos) != 1 {
+		t.Fatalf("expected 1 todo, got %d", len(todos))
 	}
 }
