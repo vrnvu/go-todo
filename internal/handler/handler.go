@@ -22,6 +22,10 @@ type Todos struct {
 	repo *db.Repository
 }
 
+func (t *Todos) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t.Mux.ServeHTTP(w, r)
+}
+
 type Config struct {
 	DBFile             string
 	Slog               *slog.Logger

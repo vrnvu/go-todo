@@ -71,7 +71,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:              ":" + port,
-		Handler:           todosHandler.Mux,
+		Handler:           todosHandler,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
