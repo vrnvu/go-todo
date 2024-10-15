@@ -26,7 +26,3 @@ diff-check:
 			exit 1 ; \
 		fi
 .PHONY: diff-check
-
-integration-test:
-	@go run cmd/todos/main.go
-.PHONY: integration-test
