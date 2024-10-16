@@ -58,7 +58,7 @@ func (t *Todos) DeleteTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := t.repo.DeleteTodo(id); err != nil {
+	if err := t.repo.DeleteTodo(r.Context(), id); err != nil {
 		t.logError(r, fmt.Sprintf("failed to delete todo with id `%d`", id), err)
 		http.Error(w, fmt.Sprintf("failed to delete todo with id `%d`", id), http.StatusInternalServerError)
 		return
@@ -90,7 +90,7 @@ func (t *Todos) InsertTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := t.repo.InsertTodo(todo); err != nil {
+	if err := t.repo.InsertTodo(r.Context(), todo); err != nil {
 		t.logError(r, "failed to insert todo", err)
 		http.Error(w, "failed to insert todo", http.StatusInternalServerError)
 		return
@@ -98,7 +98,7 @@ func (t *Todos) InsertTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Todos) getTodos(w http.ResponseWriter, r *http.Request) {
-	todos, err := t.repo.GetTodos()
+	todos, err := t.repo.GetTodos(r.Context())
 	if err != nil {
 		t.logError(r, "failed to get todos", err)
 		http.Error(w, "failed to get todos", http.StatusInternalServerError)
@@ -117,7 +117,7 @@ func (t *Todos) getTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := t.repo.GetTodo(id)
+	todo, err := t.repo.GetTodo(r.Context(), id)
 	if err != nil {
 		var notFoundErr db.ErrNotFound
 		if errors.As(err, &notFoundErr) {
