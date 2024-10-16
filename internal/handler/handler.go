@@ -121,7 +121,7 @@ func (t *Todos) getTodo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		var notFoundErr db.ErrNotFound
 		if errors.As(err, &notFoundErr) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, notFoundErr.Error(), http.StatusNotFound)
 			return
 		}
 

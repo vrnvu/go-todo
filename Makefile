@@ -4,7 +4,8 @@ test:
 		-count=1 \
 		-short \
 		-timeout=5m \
-		./...
+		./... \
+		-coverprofile=coverage.out
 .PHONY: test
 
 # lint uses the same linter as CI and tries to report the same results running
@@ -30,3 +31,7 @@ diff-check:
 integration-test:
 	@go run cmd/todos/main.go
 .PHONY: integration-test
+
+test-coverage:
+	@go tool cover -func=./coverage.out
+.PHONY: test-coverage
