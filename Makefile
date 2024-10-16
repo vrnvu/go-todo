@@ -28,10 +28,6 @@ diff-check:
 		fi
 .PHONY: diff-check
 
-integration-test:
-	@go run cmd/todos/main.go
-.PHONY: integration-test
-
 test-coverage:
 	@go tool cover -func=./coverage.out
 .PHONY: test-coverage
