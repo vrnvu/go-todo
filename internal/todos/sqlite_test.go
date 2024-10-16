@@ -1,13 +1,11 @@
-package db
+package todos
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
-	"time"
 )
 
 func exampleTodo() Todo {
@@ -19,21 +17,12 @@ func exampleTodo() Todo {
 	}
 }
 
-func testTempFile(t *testing.T) *os.File {
-	name := fmt.Sprintf("test-%d.db", time.Now().UnixNano())
-	tempFile, err := os.CreateTemp("", name)
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
-	}
-	return tempFile
-}
-
 func TestGetTodoNotFound(t *testing.T) {
 	t.Parallel()
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	todosDB, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
@@ -54,7 +43,7 @@ func TestGetTodo(t *testing.T) {
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	todosDB, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
@@ -80,7 +69,7 @@ func TestDeleteNonExistentTodo(t *testing.T) {
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	todosDB, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
@@ -96,7 +85,7 @@ func TestDeleteTodo(t *testing.T) {
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	todosDB, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
@@ -128,7 +117,7 @@ func TestGetTodos(t *testing.T) {
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	todosDB, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}

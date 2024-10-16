@@ -1,4 +1,4 @@
-package handler
+package todos
 
 import (
 	"context"
@@ -8,22 +8,20 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-
-	"github.com/vrnvu/go-todo/internal/db"
 )
 
 type XRequestIDHeader string
 
 const XRequestIDHeaderKey XRequestIDHeader = "X-Request-ID"
 
-type Todos struct {
-	Slog    *slog.Logger
-	Mux     *http.ServeMux
-	todosDB *db.TodosDB
+type Handler struct {
+	Slog *slog.Logger
+	Mux  *http.ServeMux
+	db   *DB
 }
 
-func (t *Todos) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t.Mux.ServeHTTP(w, r)
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.Mux.ServeHTTP(w, r)
 }
 
 type Config struct {
@@ -32,25 +30,25 @@ type Config struct {
 	RequestIDGenerator func() string
 }
 
-func FromConfig(c *Config) (*Todos, error) {
-	todosDB, err := db.NewTodosDB(c.DBFile)
+func FromConfig(c *Config) (*Handler, error) {
+	db, err := NewDB(c.DBFile)
 	if err != nil {
 		return nil, err
 	}
 
-	todos := &Todos{Slog: c.Slog, Mux: http.NewServeMux(), todosDB: todosDB}
+	h := &Handler{Slog: c.Slog, Mux: http.NewServeMux(), db: db}
 
-	todos.Mux.HandleFunc("GET /health", health)
-	todos.Mux.HandleFunc("GET /todos", withBaseMiddleware(c.Slog, c.RequestIDGenerator, todos.getAll))
-	todos.Mux.HandleFunc("GET /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, todos.get))
-	todos.Mux.HandleFunc("PUT /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, todos.insert))
-	todos.Mux.HandleFunc("DELETE /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, todos.delete))
-	return todos, nil
+	h.Mux.HandleFunc("GET /health", health)
+	h.Mux.HandleFunc("GET /todos", withBaseMiddleware(c.Slog, c.RequestIDGenerator, h.getAll))
+	h.Mux.HandleFunc("GET /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, h.get))
+	h.Mux.HandleFunc("PUT /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, h.insert))
+	h.Mux.HandleFunc("DELETE /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, h.delete))
+	return h, nil
 }
 
 func health(_ http.ResponseWriter, _ *http.Request) {}
 
-func (t *Todos) delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	rawID := r.PathValue("id")
 	id, err := strconv.Atoi(rawID)
 	if err != nil {
@@ -58,14 +56,14 @@ func (t *Todos) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := t.todosDB.Delete(r.Context(), id); err != nil {
-		t.logError(r, fmt.Sprintf("failed to delete todo with id `%d`", id), err)
+	if err := h.db.Delete(r.Context(), id); err != nil {
+		h.logError(r, fmt.Sprintf("failed to delete todo with id `%d`", id), err)
 		http.Error(w, fmt.Sprintf("failed to delete todo with id `%d`", id), http.StatusInternalServerError)
 		return
 	}
 }
 
-func (t *Todos) insert(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) insert(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		http.Error(w, fmt.Sprintf("invalid content type: `%s`, use `application/json`", contentType), http.StatusBadRequest)
@@ -79,7 +77,7 @@ func (t *Todos) insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo := db.Todo{}
+	todo := Todo{}
 	if err := json.NewDecoder(r.Body).Decode(&todo); err != nil {
 		http.Error(w, "failed to decode todo body", http.StatusBadRequest)
 		return
@@ -90,62 +88,62 @@ func (t *Todos) insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := t.todosDB.Insert(r.Context(), todo); err != nil {
-		t.logError(r, "failed to insert todo", err)
+	if err := h.db.Insert(r.Context(), todo); err != nil {
+		h.logError(r, "failed to insert todo", err)
 		http.Error(w, "failed to insert todo", http.StatusInternalServerError)
 		return
 	}
 }
 
-func (t *Todos) getAll(w http.ResponseWriter, r *http.Request) {
-	todos, err := t.todosDB.GetAll(r.Context())
+func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
+	todos, err := h.db.GetAll(r.Context())
 	if err != nil {
-		t.logError(r, "failed to get todos", err)
+		h.logError(r, "failed to get todos", err)
 		http.Error(w, "failed to get todos", http.StatusInternalServerError)
 		return
 	}
 
-	t.writeJSON(w, r, todos)
+	h.writeJSON(w, r, todos)
 }
 
-func (t *Todos) get(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	rawID := r.PathValue("id")
 	id, err := strconv.Atoi(rawID)
 	if err != nil {
-		t.logError(r, fmt.Sprintf("failed to convert id `%s` to uint", rawID), err)
+		h.logError(r, fmt.Sprintf("failed to convert id `%s` to uint", rawID), err)
 		http.Error(w, fmt.Sprintf("invalid id: `%s`", rawID), http.StatusBadRequest)
 		return
 	}
 
-	todo, err := t.todosDB.Get(r.Context(), id)
+	todo, err := h.db.Get(r.Context(), id)
 	if err != nil {
-		var notFoundErr db.ErrNotFound
+		var notFoundErr ErrNotFound
 		if errors.As(err, &notFoundErr) {
 			http.Error(w, notFoundErr.Error(), http.StatusNotFound)
 			return
 		}
 
-		t.logError(r, fmt.Sprintf("failed to get todo with id `%d`", id), err)
+		h.logError(r, fmt.Sprintf("failed to get todo with id `%d`", id), err)
 		http.Error(w, fmt.Sprintf("failed to get todo with id `%d`", id), http.StatusInternalServerError)
 		return
 	}
 
-	t.writeJSON(w, r, todo)
+	h.writeJSON(w, r, todo)
 }
 
-func (t *Todos) writeJSON(w http.ResponseWriter, r *http.Request, data any) {
+func (h *Handler) writeJSON(w http.ResponseWriter, r *http.Request, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Request-ID", fromContext(r, XRequestIDHeaderKey))
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		t.logError(r, "failed to encode data", err)
+		h.logError(r, "failed to encode data", err)
 		http.Error(w, "failed to encode data", http.StatusInternalServerError)
 		return
 	}
 }
 
-func (t *Todos) logError(r *http.Request, message string, err error) {
-	t.Slog.Error(message, "error", err, string(XRequestIDHeaderKey), fromContext(r, XRequestIDHeaderKey))
+func (h *Handler) logError(r *http.Request, message string, err error) {
+	h.Slog.Error(message, "error", err, string(XRequestIDHeaderKey), fromContext(r, XRequestIDHeaderKey))
 }
 
 func fromContext(r *http.Request, key any) string {
