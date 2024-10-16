@@ -19,7 +19,7 @@ const XRequestIDHeaderKey XRequestIDHeader = "X-Request-ID"
 type Todos struct {
 	Slog    *slog.Logger
 	Mux     *http.ServeMux
-	todosDB *db.Todos
+	todosDB *db.TodosDB
 }
 
 func (t *Todos) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +33,7 @@ type Config struct {
 }
 
 func FromConfig(c *Config) (*Todos, error) {
-	todosDB, err := db.NewTodos(c.DBFile)
+	todosDB, err := db.NewTodosDB(c.DBFile)
 	if err != nil {
 		return nil, err
 	}

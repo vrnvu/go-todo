@@ -20,7 +20,7 @@ type ErrNotFound struct {
 	ID int
 }
 
-type Todos struct {
+type TodosDB struct {
 	db         *sql.DB
 	stmtInsert *sql.Stmt
 	stmtGet    *sql.Stmt
@@ -28,7 +28,7 @@ type Todos struct {
 	stmtDelete *sql.Stmt
 }
 
-func NewTodos(dbFile string) (*Todos, error) {
+func NewTodosDB(dbFile string) (*TodosDB, error) {
 	db, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		return nil, err
@@ -59,24 +59,24 @@ func NewTodos(dbFile string) (*Todos, error) {
 		return nil, err
 	}
 
-	return &Todos{db: db, stmtInsert: insertStmt, stmtGet: getStmt, stmtGetAll: getAllStmt, stmtDelete: deleteStmt}, nil
+	return &TodosDB{db: db, stmtInsert: insertStmt, stmtGet: getStmt, stmtGetAll: getAllStmt, stmtDelete: deleteStmt}, nil
 }
 
 func (e ErrNotFound) Error() string {
 	return fmt.Sprintf("todo `%d` not found", e.ID)
 }
 
-func (t *Todos) Insert(ctx context.Context, todo Todo) error {
+func (t *TodosDB) Insert(ctx context.Context, todo Todo) error {
 	_, err := t.stmtInsert.ExecContext(ctx, todo.ID, todo.Title, todo.Description, todo.Completed)
 	return err
 }
 
-func (t *Todos) Delete(ctx context.Context, id int) error {
+func (t *TodosDB) Delete(ctx context.Context, id int) error {
 	_, err := t.stmtDelete.ExecContext(ctx, id)
 	return err
 }
 
-func (t *Todos) Get(ctx context.Context, id int) (*Todo, error) {
+func (t *TodosDB) Get(ctx context.Context, id int) (*Todo, error) {
 	row := t.stmtGet.QueryRowContext(ctx, id)
 	var todo Todo
 	err := row.Scan(&todo.ID, &todo.Title, &todo.Description, &todo.Completed)
@@ -89,7 +89,7 @@ func (t *Todos) Get(ctx context.Context, id int) (*Todo, error) {
 	return &todo, nil
 }
 
-func (t *Todos) GetAll(ctx context.Context) ([]Todo, error) {
+func (t *TodosDB) GetAll(ctx context.Context) ([]Todo, error) {
 	rows, err := t.stmtGetAll.QueryContext(ctx)
 	if err != nil {
 		return nil, err
