@@ -33,3 +33,9 @@ curl -X PUT http://localhost:8080/todos/2 \
 # Get Todo with ID 2 again
 curl -X GET http://localhost:8080/todos/2
 ```
+
+# Todo
+
+- server
+- opentelemtry
+- render buffer pool
