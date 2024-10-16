@@ -17,9 +17,9 @@ type XRequestIDHeader string
 const XRequestIDHeaderKey XRequestIDHeader = "X-Request-ID"
 
 type Todos struct {
-	Slog *slog.Logger
-	Mux  *http.ServeMux
-	repo *db.Repository
+	Slog    *slog.Logger
+	Mux     *http.ServeMux
+	todosDB *db.Todos
 }
 
 func (t *Todos) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -33,24 +33,24 @@ type Config struct {
 }
 
 func FromConfig(c *Config) (*Todos, error) {
-	repo, err := db.NewRepository(c.DBFile)
+	todosDB, err := db.NewTodos(c.DBFile)
 	if err != nil {
 		return nil, err
 	}
 
-	t := &Todos{Slog: c.Slog, Mux: http.NewServeMux(), repo: repo}
+	todos := &Todos{Slog: c.Slog, Mux: http.NewServeMux(), todosDB: todosDB}
 
-	t.Mux.HandleFunc("GET /health", health)
-	t.Mux.HandleFunc("GET /todos", withBaseMiddleware(c.Slog, c.RequestIDGenerator, t.getTodos))
-	t.Mux.HandleFunc("GET /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, t.getTodo))
-	t.Mux.HandleFunc("PUT /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, t.InsertTodo))
-	t.Mux.HandleFunc("DELETE /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, t.DeleteTodo))
-	return t, nil
+	todos.Mux.HandleFunc("GET /health", health)
+	todos.Mux.HandleFunc("GET /todos", withBaseMiddleware(c.Slog, c.RequestIDGenerator, todos.getAll))
+	todos.Mux.HandleFunc("GET /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, todos.get))
+	todos.Mux.HandleFunc("PUT /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, todos.insert))
+	todos.Mux.HandleFunc("DELETE /todos/{id}", withBaseMiddleware(c.Slog, c.RequestIDGenerator, todos.delete))
+	return todos, nil
 }
 
 func health(_ http.ResponseWriter, _ *http.Request) {}
 
-func (t *Todos) DeleteTodo(w http.ResponseWriter, r *http.Request) {
+func (t *Todos) delete(w http.ResponseWriter, r *http.Request) {
 	rawID := r.PathValue("id")
 	id, err := strconv.Atoi(rawID)
 	if err != nil {
@@ -58,14 +58,14 @@ func (t *Todos) DeleteTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := t.repo.DeleteTodo(r.Context(), id); err != nil {
+	if err := t.todosDB.Delete(r.Context(), id); err != nil {
 		t.logError(r, fmt.Sprintf("failed to delete todo with id `%d`", id), err)
 		http.Error(w, fmt.Sprintf("failed to delete todo with id `%d`", id), http.StatusInternalServerError)
 		return
 	}
 }
 
-func (t *Todos) InsertTodo(w http.ResponseWriter, r *http.Request) {
+func (t *Todos) insert(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		http.Error(w, fmt.Sprintf("invalid content type: `%s`, use `application/json`", contentType), http.StatusBadRequest)
@@ -90,15 +90,15 @@ func (t *Todos) InsertTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := t.repo.InsertTodo(r.Context(), todo); err != nil {
+	if err := t.todosDB.Insert(r.Context(), todo); err != nil {
 		t.logError(r, "failed to insert todo", err)
 		http.Error(w, "failed to insert todo", http.StatusInternalServerError)
 		return
 	}
 }
 
-func (t *Todos) getTodos(w http.ResponseWriter, r *http.Request) {
-	todos, err := t.repo.GetTodos(r.Context())
+func (t *Todos) getAll(w http.ResponseWriter, r *http.Request) {
+	todos, err := t.todosDB.GetAll(r.Context())
 	if err != nil {
 		t.logError(r, "failed to get todos", err)
 		http.Error(w, "failed to get todos", http.StatusInternalServerError)
@@ -108,7 +108,7 @@ func (t *Todos) getTodos(w http.ResponseWriter, r *http.Request) {
 	t.writeJSON(w, r, todos)
 }
 
-func (t *Todos) getTodo(w http.ResponseWriter, r *http.Request) {
+func (t *Todos) get(w http.ResponseWriter, r *http.Request) {
 	rawID := r.PathValue("id")
 	id, err := strconv.Atoi(rawID)
 	if err != nil {
@@ -117,7 +117,7 @@ func (t *Todos) getTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := t.repo.GetTodo(r.Context(), id)
+	todo, err := t.todosDB.Get(r.Context(), id)
 	if err != nil {
 		var notFoundErr db.ErrNotFound
 		if errors.As(err, &notFoundErr) {
