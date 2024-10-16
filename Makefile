@@ -4,7 +4,8 @@ test:
 		-count=1 \
 		-short \
 		-timeout=5m \
-		./...
+		./... \
+		-coverprofile=coverage.out
 .PHONY: test
 
 # lint uses the same linter as CI and tries to report the same results running
