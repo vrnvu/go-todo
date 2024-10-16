@@ -20,15 +20,15 @@ type ErrNotFound struct {
 	ID int
 }
 
-type Repository struct {
-	db             *sql.DB
-	stmtInsertTodo *sql.Stmt
-	stmtGetTodo    *sql.Stmt
-	stmtGetTodos   *sql.Stmt
-	stmtDeleteTodo *sql.Stmt
+type TodosDB struct {
+	db         *sql.DB
+	stmtInsert *sql.Stmt
+	stmtGet    *sql.Stmt
+	stmtGetAll *sql.Stmt
+	stmtDelete *sql.Stmt
 }
 
-func NewRepository(dbFile string) (*Repository, error) {
+func NewTodosDB(dbFile string) (*TodosDB, error) {
 	db, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		return nil, err
@@ -59,25 +59,25 @@ func NewRepository(dbFile string) (*Repository, error) {
 		return nil, err
 	}
 
-	return &Repository{db: db, stmtInsertTodo: insertStmt, stmtGetTodo: getStmt, stmtGetTodos: getAllStmt, stmtDeleteTodo: deleteStmt}, nil
+	return &TodosDB{db: db, stmtInsert: insertStmt, stmtGet: getStmt, stmtGetAll: getAllStmt, stmtDelete: deleteStmt}, nil
 }
 
 func (e ErrNotFound) Error() string {
 	return fmt.Sprintf("todo `%d` not found", e.ID)
 }
 
-func (r *Repository) InsertTodo(ctx context.Context, todo Todo) error {
-	_, err := r.stmtInsertTodo.ExecContext(ctx, todo.ID, todo.Title, todo.Description, todo.Completed)
+func (t *TodosDB) Insert(ctx context.Context, todo Todo) error {
+	_, err := t.stmtInsert.ExecContext(ctx, todo.ID, todo.Title, todo.Description, todo.Completed)
 	return err
 }
 
-func (r *Repository) DeleteTodo(ctx context.Context, id int) error {
-	_, err := r.stmtDeleteTodo.ExecContext(ctx, id)
+func (t *TodosDB) Delete(ctx context.Context, id int) error {
+	_, err := t.stmtDelete.ExecContext(ctx, id)
 	return err
 }
 
-func (r *Repository) GetTodo(ctx context.Context, id int) (*Todo, error) {
-	row := r.stmtGetTodo.QueryRowContext(ctx, id)
+func (t *TodosDB) Get(ctx context.Context, id int) (*Todo, error) {
+	row := t.stmtGet.QueryRowContext(ctx, id)
 	var todo Todo
 	err := row.Scan(&todo.ID, &todo.Title, &todo.Description, &todo.Completed)
 	if err != nil {
@@ -89,8 +89,8 @@ func (r *Repository) GetTodo(ctx context.Context, id int) (*Todo, error) {
 	return &todo, nil
 }
 
-func (r *Repository) GetTodos(ctx context.Context) ([]Todo, error) {
-	rows, err := r.stmtGetTodos.QueryContext(ctx)
+func (t *TodosDB) GetAll(ctx context.Context) ([]Todo, error) {
+	rows, err := t.stmtGetAll.QueryContext(ctx)
 	if err != nil {
 		return nil, err
 	}
