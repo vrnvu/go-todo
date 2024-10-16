@@ -1,13 +1,11 @@
-package db
+package todos
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
-	"time"
 )
 
 func exampleTodo() Todo {
@@ -19,26 +17,17 @@ func exampleTodo() Todo {
 	}
 }
 
-func testTempFile(t *testing.T) *os.File {
-	name := fmt.Sprintf("test-%d.db", time.Now().UnixNano())
-	tempFile, err := os.CreateTemp("", name)
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
-	}
-	return tempFile
-}
-
 func TestGetTodoNotFound(t *testing.T) {
 	t.Parallel()
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	db, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
-	todo, err := todosDB.Get(context.Background(), 1)
+	todo, err := db.Get(context.Background(), 1)
 	if todo != nil {
 		t.Fatalf("expected todo to be nil, got %v", todo)
 	}
@@ -54,18 +43,18 @@ func TestGetTodo(t *testing.T) {
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	db, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
 	want := exampleTodo()
-	err = todosDB.Insert(context.Background(), want)
+	err = db.Insert(context.Background(), want)
 	if err != nil {
 		t.Fatalf("failed to insert todo: %v", err)
 	}
 
-	got, err := todosDB.Get(context.Background(), 1)
+	got, err := db.Get(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("failed to get todo: %v", err)
 	}
@@ -80,12 +69,12 @@ func TestDeleteNonExistentTodo(t *testing.T) {
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	db, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
-	err = todosDB.Delete(context.Background(), 1)
+	err = db.Delete(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("failed to delete todo: %v", err)
 	}
@@ -96,23 +85,23 @@ func TestDeleteTodo(t *testing.T) {
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	db, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
 	want := exampleTodo()
-	err = todosDB.Insert(context.Background(), want)
+	err = db.Insert(context.Background(), want)
 	if err != nil {
 		t.Fatalf("failed to insert todo: %v", err)
 	}
 
-	err = todosDB.Delete(context.Background(), 1)
+	err = db.Delete(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("failed to delete todo: %v", err)
 	}
 
-	got, err := todosDB.Get(context.Background(), 1)
+	got, err := db.Get(context.Background(), 1)
 	if got != nil {
 		t.Fatalf("expected todo to be nil, got %v", got)
 	}
@@ -128,12 +117,12 @@ func TestGetTodos(t *testing.T) {
 	tempFile := testTempFile(t)
 	defer os.Remove(tempFile.Name())
 
-	todosDB, err := NewTodosDB(tempFile.Name())
+	db, err := NewDB(tempFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
-	todos, err := todosDB.GetAll(context.Background())
+	todos, err := db.GetAll(context.Background())
 	if err != nil {
 		t.Fatalf("failed to get todos: %v", err)
 	}
@@ -141,12 +130,12 @@ func TestGetTodos(t *testing.T) {
 		t.Fatalf("expected 0 todos, got %d", len(todos))
 	}
 
-	err = todosDB.Insert(context.Background(), exampleTodo())
+	err = db.Insert(context.Background(), exampleTodo())
 	if err != nil {
 		t.Fatalf("failed to insert todo: %v", err)
 	}
 
-	todos, err = todosDB.GetAll(context.Background())
+	todos, err = db.GetAll(context.Background())
 	if err != nil {
 		t.Fatalf("failed to get todos: %v", err)
 	}

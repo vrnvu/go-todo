@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jaevor/go-nanoid"
-	"github.com/vrnvu/go-todo/internal/handler"
+	"github.com/vrnvu/go-todo/internal/todos"
 )
 
 func fromEnvFile() string {
@@ -60,7 +60,7 @@ func main() {
 		panic(err)
 	}
 
-	todosHandler, err := handler.FromConfig(&handler.Config{
+	todosHandler, err := todos.FromConfig(&todos.Config{
 		DBFile:             dbFile,
 		Slog:               slog,
 		RequestIDGenerator: requestIDGenerator,
