@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -37,7 +38,7 @@ func TestGetTodoNotFound(t *testing.T) {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
-	todo, err := repository.GetTodo(1)
+	todo, err := repository.GetTodo(context.Background(), 1)
 	if todo != nil {
 		t.Fatalf("expected todo to be nil, got %v", todo)
 	}
@@ -59,12 +60,12 @@ func TestGetTodo(t *testing.T) {
 	}
 
 	want := exampleTodo()
-	err = repository.InsertTodo(want)
+	err = repository.InsertTodo(context.Background(), want)
 	if err != nil {
 		t.Fatalf("failed to insert todo: %v", err)
 	}
 
-	got, err := repository.GetTodo(1)
+	got, err := repository.GetTodo(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("failed to get todo: %v", err)
 	}
@@ -84,7 +85,7 @@ func TestDeleteNonExistentTodo(t *testing.T) {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
-	err = repository.DeleteTodo(1)
+	err = repository.DeleteTodo(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("failed to delete todo: %v", err)
 	}
@@ -101,17 +102,17 @@ func TestDeleteTodo(t *testing.T) {
 	}
 
 	want := exampleTodo()
-	err = repository.InsertTodo(want)
+	err = repository.InsertTodo(context.Background(), want)
 	if err != nil {
 		t.Fatalf("failed to insert todo: %v", err)
 	}
 
-	err = repository.DeleteTodo(1)
+	err = repository.DeleteTodo(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("failed to delete todo: %v", err)
 	}
 
-	got, err := repository.GetTodo(1)
+	got, err := repository.GetTodo(context.Background(), 1)
 	if got != nil {
 		t.Fatalf("expected todo to be nil, got %v", got)
 	}
@@ -132,7 +133,7 @@ func TestGetTodos(t *testing.T) {
 		t.Fatalf("failed to create repository: %v", err)
 	}
 
-	todos, err := repository.GetTodos()
+	todos, err := repository.GetTodos(context.Background())
 	if err != nil {
 		t.Fatalf("failed to get todos: %v", err)
 	}
@@ -140,12 +141,12 @@ func TestGetTodos(t *testing.T) {
 		t.Fatalf("expected 0 todos, got %d", len(todos))
 	}
 
-	err = repository.InsertTodo(exampleTodo())
+	err = repository.InsertTodo(context.Background(), exampleTodo())
 	if err != nil {
 		t.Fatalf("failed to insert todo: %v", err)
 	}
 
-	todos, err = repository.GetTodos()
+	todos, err = repository.GetTodos(context.Background())
 	if err != nil {
 		t.Fatalf("failed to get todos: %v", err)
 	}

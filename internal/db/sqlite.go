@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -65,18 +66,18 @@ func (e ErrNotFound) Error() string {
 	return fmt.Sprintf("todo `%d` not found", e.ID)
 }
 
-func (r *Repository) InsertTodo(todo Todo) error {
-	_, err := r.stmtInsertTodo.Exec(todo.ID, todo.Title, todo.Description, todo.Completed)
+func (r *Repository) InsertTodo(ctx context.Context, todo Todo) error {
+	_, err := r.stmtInsertTodo.ExecContext(ctx, todo.ID, todo.Title, todo.Description, todo.Completed)
 	return err
 }
 
-func (r *Repository) DeleteTodo(id int) error {
-	_, err := r.stmtDeleteTodo.Exec(id)
+func (r *Repository) DeleteTodo(ctx context.Context, id int) error {
+	_, err := r.stmtDeleteTodo.ExecContext(ctx, id)
 	return err
 }
 
-func (r *Repository) GetTodo(id int) (*Todo, error) {
-	row := r.stmtGetTodo.QueryRow(id)
+func (r *Repository) GetTodo(ctx context.Context, id int) (*Todo, error) {
+	row := r.stmtGetTodo.QueryRowContext(ctx, id)
 	var todo Todo
 	err := row.Scan(&todo.ID, &todo.Title, &todo.Description, &todo.Completed)
 	if err != nil {
@@ -88,8 +89,8 @@ func (r *Repository) GetTodo(id int) (*Todo, error) {
 	return &todo, nil
 }
 
-func (r *Repository) GetTodos() ([]Todo, error) {
-	rows, err := r.stmtGetTodos.Query()
+func (r *Repository) GetTodos(ctx context.Context) ([]Todo, error) {
+	rows, err := r.stmtGetTodos.QueryContext(ctx)
 	if err != nil {
 		return nil, err
 	}
