@@ -3,11 +3,70 @@ package todos
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 
 	// Register the SQLite driver with the database/sql package
 	_ "github.com/mattn/go-sqlite3"
 )
+
+type TodoPatch struct {
+	data map[string]any
+
+	ID          int
+	Title       *string
+	Description *string
+	Completed   *bool
+}
+
+func NewTodoPatch() TodoPatch {
+	return TodoPatch{data: make(map[string]any)}
+}
+
+func (tp *TodoPatch) UnmarshalJSON(b []byte) error {
+	err := json.Unmarshal(b, &tp.data)
+	if err != nil {
+		return err
+	}
+
+	if ID, ok := tp.data["id"]; ok {
+		if ID == nil {
+			return fmt.Errorf("id is required")
+		}
+		tp.ID = int(ID.(float64))
+	}
+
+	if title, ok := tp.data["title"]; ok {
+		if title == nil {
+			defaultTitle := ""
+			tp.Title = &defaultTitle
+		} else {
+			tp.Title = title.(*string)
+		}
+	}
+
+	if description, ok := tp.data["description"]; ok {
+		if description == nil {
+			defaultDescription := ""
+			tp.Description = &defaultDescription
+		} else {
+			tp.Description = description.(*string)
+		}
+	}
+
+	if completed, ok := tp.data["completed"]; ok {
+		if completed == nil {
+			defaultCompleted := false
+			tp.Completed = &defaultCompleted
+		} else {
+			tp.Completed = completed.(*bool)
+		}
+	}
+
+	return nil
+}
 
 type Todo struct {
 	ID          int    `json:"id"`
@@ -19,6 +78,8 @@ type Todo struct {
 type ErrNotFound struct {
 	ID int
 }
+
+var ErrNoFieldsToUpdate = errors.New("no fields to update")
 
 type DB struct {
 	db         *sql.DB
@@ -107,4 +168,44 @@ func (t *DB) GetAll(ctx context.Context) ([]Todo, error) {
 	}
 
 	return todos, nil
+}
+
+func (t *DB) Patch(ctx context.Context, patch TodoPatch) error {
+	var queryBuilder strings.Builder
+	args := []any{}
+
+	queryBuilder.WriteString("UPDATE todos SET ")
+
+	if patch.Title != nil {
+		queryBuilder.WriteString("title = ?, ")
+		args = append(args, patch.Title)
+	}
+
+	if patch.Description != nil {
+		queryBuilder.WriteString("description = ?, ")
+		args = append(args, patch.Description)
+	}
+
+	if patch.Completed != nil {
+		queryBuilder.WriteString("completed = ?, ")
+		args = append(args, patch.Completed)
+	}
+
+	if len(args) == 0 {
+		return ErrNoFieldsToUpdate
+	}
+
+	query := queryBuilder.String()
+	query = query[:len(query)-2] // Remove trailing comma and space
+	query += " WHERE id = ?"
+	args = append(args, patch.data["id"])
+
+	stmt, err := t.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, args...)
+	return err
 }

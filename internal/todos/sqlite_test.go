@@ -2,9 +2,12 @@ package todos
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"log/slog"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -141,5 +144,59 @@ func TestGetTodos(t *testing.T) {
 	}
 	if len(todos) != 1 {
 		t.Fatalf("expected 1 todo, got %d", len(todos))
+	}
+}
+
+func TestPatchTodo(t *testing.T) {
+	t.Parallel()
+	tempFile := testTempFile(t)
+	defer os.Remove(tempFile.Name())
+
+	db, err := NewDB(tempFile.Name())
+	if err != nil {
+		t.Fatalf("failed to create repository: %v", err)
+	}
+
+	todo := Todo{
+		ID:          1,
+		Title:       "Todo 1",
+		Description: "Description 1",
+		Completed:   true,
+	}
+
+	err = db.Insert(context.Background(), todo)
+	if err != nil {
+		t.Fatalf("failed to insert todo: %v", err)
+	}
+
+	patch := NewTodoPatch()
+	body := strings.NewReader(`{"id": 1,  "description": null, "completed": null}`)
+	if err := json.NewDecoder(body).Decode(&patch); err != nil {
+		t.Fatalf("failed to decode todo body: %v", err)
+	}
+	slog.Info("patch", "patch", patch)
+
+	err = db.Patch(context.Background(), patch)
+	if err != nil {
+		t.Fatalf("failed to patch todo: %v", err)
+	}
+
+	got, err := db.Get(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("failed to get todo: %v", err)
+	}
+
+	slog.Info("got", "got", got)
+
+	if got.Description != "" {
+		t.Fatalf("expected description to be empty, got %s", got.Description)
+	}
+
+	if got.Completed != false {
+		t.Fatalf("expected completed to be false, got %t", got.Completed)
+	}
+
+	if got.Title != "Todo 1" {
+		t.Fatalf("expected title to be Todo 1, got %s", got.Title)
 	}
 }
