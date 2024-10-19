@@ -42,7 +42,7 @@ func TestTodosHandlerFailure(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 	handler := testHandler(t, tempFile)
 
-	r, err := http.NewRequestWithContext(context.Background(), "DELETE", "/todos/1", nil)
+	r, err := http.NewRequestWithContext(context.Background(), http.MethodDelete, "/todos/1", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestTodosHandlerFailure(t *testing.T) {
 		t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
-	r, err = http.NewRequestWithContext(context.Background(), "GET", "/todos/1", nil)
+	r, err = http.NewRequestWithContext(context.Background(), http.MethodGet, "/todos/1", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestTodosHandlerFailure(t *testing.T) {
 		t.Fatalf("expected status code %d, got %d", http.StatusNotFound, w.Code)
 	}
 
-	r, err = http.NewRequestWithContext(context.Background(), "GET", "/todos", nil)
+	r, err = http.NewRequestWithContext(context.Background(), http.MethodGet, "/todos", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestContentType(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 	handler := testHandler(t, tempFile)
 
-	r, err := http.NewRequestWithContext(context.Background(), "PUT", "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
+	r, err := http.NewRequestWithContext(context.Background(), http.MethodPut, "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestContentType(t *testing.T) {
 		t.Fatalf("expected status code %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	r, err = http.NewRequestWithContext(context.Background(), "PUT", "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
+	r, err = http.NewRequestWithContext(context.Background(), http.MethodPut, "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestPatchWithNulls(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 	handler := testHandler(t, tempFile)
 
-	r, err := http.NewRequestWithContext(context.Background(), "PUT", "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
+	r, err := http.NewRequestWithContext(context.Background(), http.MethodPut, "/todos/1", strings.NewReader(`{"id": 1,  "description": "test","title": "test", "completed": false}`))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -142,7 +142,7 @@ func TestPatchWithNulls(t *testing.T) {
 
 	// we setting descrption to null, we expect it to be set to the empty value
 	// we are not sending the title and completed, so they should not be modified
-	r, err = http.NewRequestWithContext(context.Background(), "PATCH", "/todos/1", strings.NewReader(`{"id": 1,  "description": null}`))
+	r, err = http.NewRequestWithContext(context.Background(), http.MethodPatch, "/todos/1", strings.NewReader(`{"id": 1,  "description": null}`))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestPatchWithNulls(t *testing.T) {
 		t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
-	r, err = http.NewRequestWithContext(context.Background(), "GET", "/todos/1", nil)
+	r, err = http.NewRequestWithContext(context.Background(), http.MethodGet, "/todos/1", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -197,7 +197,7 @@ func TestPatchNoFieldsToUpdate(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 	handler := testHandler(t, tempFile)
 
-	r, err := http.NewRequestWithContext(context.Background(), "PATCH", "/todos/1", strings.NewReader(`{"id": 1}`))
+	r, err := http.NewRequestWithContext(context.Background(), http.MethodPatch, "/todos/1", strings.NewReader(`{"id": 1}`))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
