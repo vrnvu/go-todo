@@ -82,7 +82,7 @@ check_json "$completed" "true"
 # Patch Todo with ID 2 to set description to null
 response=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH $BASE_URL/todos/2 \
      -H "Content-Type: application/json" \
-     -d '{"description": null}')
+     -d '{"id": 2,"description": null}')
 check_status $response 200
 
 # Get Todo with ID 2 to verify description is an empty string
