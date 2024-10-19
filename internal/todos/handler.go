@@ -20,13 +20,13 @@ type xRequestIDHeader string
 
 const xRequestIDHeaderKey xRequestIDHeader = headerXRequestID
 
-type handler struct {
+type Handler struct {
 	Slog *slog.Logger
 	Mux  *http.ServeMux
 	db   *DB
 }
 
-func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.Mux.ServeHTTP(w, r)
 }
 
@@ -36,13 +36,13 @@ type Config struct {
 	RequestIDGenerator func() string
 }
 
-func FromConfig(c *Config) (*handler, error) {
+func FromConfig(c *Config) (*Handler, error) {
 	db, err := NewDB(c.DBFile)
 	if err != nil {
 		return nil, err
 	}
 
-	h := &handler{Slog: c.Slog, Mux: http.NewServeMux(), db: db}
+	h := &Handler{Slog: c.Slog, Mux: http.NewServeMux(), db: db}
 
 	h.Mux.HandleFunc("GET /health", health)
 	h.Mux.HandleFunc("GET /todos", withBaseMiddleware(c.Slog, c.RequestIDGenerator, h.getAll))
@@ -55,7 +55,7 @@ func FromConfig(c *Config) (*handler, error) {
 
 func health(_ http.ResponseWriter, _ *http.Request) {}
 
-func (h *handler) delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	id, err := fromPathTodoID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -81,7 +81,7 @@ func (h *handler) delete(w http.ResponseWriter, r *http.Request) {
 //
 // Example:
 // { id: 1, "completed": null } will set completed to false.
-func (h *handler) patch(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 	if err := assertHeaderValueIs(r, headerContentType, valueContentTypeJSON); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -116,7 +116,7 @@ func (h *handler) patch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *handler) insert(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) insert(w http.ResponseWriter, r *http.Request) {
 	if err := assertHeaderValueIs(r, headerContentType, valueContentTypeJSON); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -146,7 +146,7 @@ func (h *handler) insert(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *handler) getAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
 	todos, err := h.db.GetAll(r.Context())
 	if err != nil {
 		h.logError(r, http.StatusText(http.StatusInternalServerError), err)
@@ -157,7 +157,7 @@ func (h *handler) getAll(w http.ResponseWriter, r *http.Request) {
 	h.writeJSON(w, r, todos)
 }
 
-func (h *handler) get(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	id, err := fromPathTodoID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -180,7 +180,7 @@ func (h *handler) get(w http.ResponseWriter, r *http.Request) {
 	h.writeJSON(w, r, todo)
 }
 
-func (h *handler) writeJSON(w http.ResponseWriter, r *http.Request, data any) {
+func (h *Handler) writeJSON(w http.ResponseWriter, r *http.Request, data any) {
 	w.Header().Set(headerContentType, valueContentTypeJSON)
 	w.Header().Set(headerXRequestID, fromContext(r, xRequestIDHeaderKey))
 
@@ -191,7 +191,7 @@ func (h *handler) writeJSON(w http.ResponseWriter, r *http.Request, data any) {
 	}
 }
 
-func (h *handler) logError(r *http.Request, message string, err error) {
+func (h *Handler) logError(r *http.Request, message string, err error) {
 	h.Slog.Error(message, "error", err, "method", r.Method, "path", r.URL.Path, headerXRequestID, fromContext(r, xRequestIDHeaderKey))
 }
 

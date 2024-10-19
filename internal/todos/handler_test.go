@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func testHandler(t *testing.T, tempFile *os.File) *handler {
+func testHandler(t *testing.T, tempFile *os.File) *Handler {
 	handler, err := FromConfig(&Config{
 		DBFile: tempFile.Name(),
 		Slog:   slog.New(slog.NewJSONHandler(os.Stdout, nil)),
