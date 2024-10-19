@@ -79,5 +79,17 @@ check_status ${response: -3} 200
 completed=$(jq -r '.completed' todo.json)
 check_json "$completed" "true"
 
+# Patch Todo with ID 2 to set description to null
+response=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH $BASE_URL/todos/2 \
+     -H "Content-Type: application/json" \
+     -d '{"description": null}')
+check_status $response 200
+
+# Get Todo with ID 2 to verify description is an empty string
+response=$(curl -s -w "%{http_code}" -o todo.json -X GET $BASE_URL/todos/2)
+check_status ${response: -3} 200
+description=$(jq -r '.description' todo.json)
+check_json "$description" ""
+
 echo "All tests passed!"
 rm todos.json todo.json

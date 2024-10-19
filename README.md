@@ -32,6 +32,14 @@ curl -X PUT http://localhost:8080/todos/2 \
 
 # Get Todo with ID 2 again
 curl -X GET http://localhost:8080/todos/2
+
+# Patch Todo with ID 2 to set description to null
+curl -X PATCH http://localhost:8080/todos/2 \
+     -H "Content-Type: application/json" \
+     -d '{"description": null}'
+
+# Get Todo with ID 2 to verify description is an empty string
+curl -X GET http://localhost:8080/todos/2
 ```
 
 # Todo
