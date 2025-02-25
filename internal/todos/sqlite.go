@@ -35,10 +35,7 @@ func (tp *TodoPatch) UnmarshalJSON(b []byte) error {
 		if ID == nil {
 			return fmt.Errorf("id is required")
 		}
-		tp.ID, ok = ID.(int)
-		if !ok {
-			return fmt.Errorf("id is not an integer")
-		}
+		tp.ID = int(ID.(float64))
 	}
 
 	if title, ok := tp.data["title"]; ok {
@@ -46,10 +43,7 @@ func (tp *TodoPatch) UnmarshalJSON(b []byte) error {
 			defaultTitle := ""
 			tp.Title = &defaultTitle
 		} else {
-			tp.Title, ok = title.(*string)
-			if !ok {
-				return fmt.Errorf("title is not a string")
-			}
+			tp.Title = title.(*string)
 		}
 	}
 
@@ -58,10 +52,7 @@ func (tp *TodoPatch) UnmarshalJSON(b []byte) error {
 			defaultDescription := ""
 			tp.Description = &defaultDescription
 		} else {
-			tp.Description, ok = description.(*string)
-			if !ok {
-				return fmt.Errorf("description is not a string")
-			}
+			tp.Description = description.(*string)
 		}
 	}
 
@@ -70,10 +61,7 @@ func (tp *TodoPatch) UnmarshalJSON(b []byte) error {
 			defaultCompleted := false
 			tp.Completed = &defaultCompleted
 		} else {
-			tp.Completed, ok = completed.(*bool)
-			if !ok {
-				return fmt.Errorf("completed is not a boolean")
-			}
+			tp.Completed = completed.(*bool)
 		}
 	}
 
